@@ -1,0 +1,116 @@
+// queryDSL 버전
+buildscript {
+    ext {
+        queryDslVersion = '5.0.0'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.7.14-SNAPSHOT'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+
+    // querydsl 추가 시작
+    id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
+    // querydsl 추가 끝
+}
+
+group = 'com.exciting'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '11'
+}
+
+configurations {
+    all {
+        exclude group: 'javax.servlet', module: 'servlet-api'
+    }
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    querydsl.extendsFrom compileClasspath
+
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    //JWT
+    // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+    //corsfilter
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+    implementation 'javax.websocket:javax.websocket-api:1.1'
+
+    // 이메일인증
+    // https://mvnrepository.com/artifact/com.sun.mail/javax.mail
+    implementation 'com.sun.mail:javax.mail:1.4.7'
+    // https://mvnrepository.com/artifact/com.sun.activation/javax.activation
+    implementation 'com.sun.activation:javax.activation:1.2.0'
+    // 이메일인증 끝
+
+
+    // 파일업로드
+    // https://mvnrepository.com/artifact/commons-io/commons-io
+    implementation 'commons-io:commons-io:2.11.0'
+    // https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload
+    implementation 'commons-fileupload:commons-fileupload:1.4'
+    // 파일업로드 끝
+
+    // git
+    // https://mvnrepository.com/artifact/org.springframework.security/spring-security-oauth2-client
+    implementation 'org.springframework.security:spring-security-oauth2-client:5.6.1'
+
+    // querydsl 추가 시작
+    implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
+    implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
+
+    // querydsl 추가 끝
+
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.3'
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
+    // SQL 실행 파라미터 로그 기능 추가 시작
+    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.8'
+    // SQL 실행 파라미터 로그 기능 추가 끝
+
+}
+
+// querydsl 설정 추가 시작
+def querydslDir = "$buildDir/generated/querydsl"
+querydsl {
+    jpa = true
+    querydslSourcesDir = querydslDir
+}
+sourceSets {
+    main.java.srcDir querydslDir
+}
+compileQuerydsl {
+    options.annotationProcessorPath = configurations.querydsl
+    if (file(querydslDir).exists()) delete(file(querydslDir))
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
