@@ -1,5 +1,7 @@
 package com.exciting.login.security;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -45,12 +47,15 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService{
 		// github,kakao,naver에 따라 분기
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         log.info("registrationId {} ", registrationId );
+        log.info("attributes {}",oAuth2User.getAttributes());
                 
         if(registrationId.equals("github")) {
         	
         	// 사용자가 로그인을 하고 인가를 허락하면 github측에서 login필드를 반환하고, 이 login필드에서 사용자의 github 정보를 가져온다.
         	final String m_github_id = (String)oAuth2User.getAttributes().get("login");
         	final String member_id = "github_"+m_github_id;
+        	
+
         	
         	Member memberEntity = null;
         	// member table에 유저가 존재하지 않으면 새롭게 등록 
@@ -76,6 +81,9 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService{
         	final String member_id = "kakao_"+m_kakao_id;
         	log.info("m_kakao_id {}", m_kakao_id);
         	
+        	final Map<String,Object> properties = (Map<String,Object>)oAuth2User.getAttributes().get("properties");
+        	final String m_image = (String)properties.get("profile_image");
+        	
         	Member memberEntity = null;
         	// member table에 유저가 존재하지 않으면 새롭게 등록 
         	if(!loginRepository.existsByM_kakao_id(m_kakao_id)) {
@@ -83,6 +91,7 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService{
         		memberEntity = Member.builder()
         				.member_id(member_id)
         				.m_kakao_id(m_kakao_id)
+        				.m_image(m_image)
         				.roles("ROLE_user")
         				.build();
         		
@@ -95,16 +104,18 @@ public class OAuthUserServiceImpl extends DefaultOAuth2UserService{
         }else if(registrationId.equals("naver")){
         	
         	// 사용자가 로그인을 하고 인가를 허락하면 naver측에서 id필드를 반환하고, 이 id필드에서 사용자의 naver id(고유번호)를 가져온다.
-        	final String m_naver_id = String.valueOf(oAuth2User.getAttributes().get("id"));
-        	final String member_id = "naver_"+m_naver_id;
+        	final Map<String,Object> response = (Map<String,Object>)(oAuth2User.getAttributes().get("response"));
+        	String m_naver_id = (String)response.get("id");
+        	log.info("response {}, m_naver_id {}",(Map<String,Object>)(oAuth2User.getAttributes().get("response")),m_naver_id);
+        	final String member_id = "naver_"+m_naver_id.substring(0,13);
         	
         	Member memberEntity = null;
         	// member table에 유저가 존재하지 않으면 새롭게 등록 
         	if(!loginRepository.existsByM_naver_id(m_naver_id)) {
-        		System.err.println("OAuthUserServiceImpl/loadUser/ loginRepository / existsByM_kakao_id / membertable에 m_naver_id 존재안함");
+        		System.err.println("OAuthUserServiceImpl/loadUser/ loginRepository / existsByM_naver_id / membertable에 m_naver_id 존재안함");
         		memberEntity = Member.builder()
         				.member_id(member_id)
-        				.m_kakao_id(m_naver_id)
+        				.m_naver_id(m_naver_id)
         				.roles("ROLE_user")
         				.build();
         		

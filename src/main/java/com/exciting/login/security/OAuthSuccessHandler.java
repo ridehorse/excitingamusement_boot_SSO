@@ -2,6 +2,7 @@ package com.exciting.login.security;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.Cookie;
@@ -71,18 +72,26 @@ public class OAuthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler{
 			
 		}else if(registrationId.equals("kakao")) {
 			
+			final Map<String,Object> properties = (Map<String,Object>)(getPrincipal.getAttributes().get("properties"));
+        	String m_image = (String)properties.get("profile_image");
+			
 			log.info("onAuthenticationSuccess / authentication/ id {} ", getPrincipal.getAttributes().get("id"));
 			result = loginService.getNameByM_kakao_id(String.valueOf(getPrincipal.getAttributes().get("id")));
 			log.info("회원가입 여부(0:안함, 1: 함, 2:registrationId is Null) {} ", result);
-			response.sendRedirect(redirectUri.orElseGet(()-> LOCAL_REDIRECT_URL) + "/kakaoLogin?token="+token+"&member_id="+getPrincipal.getName()+"&kakao_id="+getPrincipal.getAttributes().get("id")+"&result="+result);
+			response.sendRedirect(redirectUri.orElseGet(()-> LOCAL_REDIRECT_URL) + "/kakaoLogin?token="+token+"&member_id="+getPrincipal.getName()+"&kakao_id="+getPrincipal.getAttributes().get("id")+"&result="+result+"&kakao_image="+m_image);
 
 			
 		}else if(registrationId.equals("naver")) {
 			
-			log.info("onAuthenticationSuccess / authentication/ id {} ", getPrincipal.getAttributes().get("id"));
-			result = loginService.getNameByM_naver_id(String.valueOf(getPrincipal.getAttributes().get("login")));
+        	final Map<String,Object> res = (Map<String,Object>)(getPrincipal.getAttributes().get("response"));
+        	String m_naver_id = (String)res.get("id");
+        	String m_image = (String)res.get("profile_image");
+			
+			log.info("onAuthenticationSuccess / authentication/ id {} ",  m_naver_id);
+			result = loginService.getNameByM_naver_id(m_naver_id);
 			log.info("회원가입 여부(0:안함, 1: 함, 2:registrationId is Null) {} ", result);
-			response.sendRedirect(redirectUri.orElseGet(()-> LOCAL_REDIRECT_URL) + "/naverLogin?token="+token+"&member_id="+getPrincipal.getName()+"&naver_id="+getPrincipal.getAttributes().get("login")+"&result="+result);
+			// principal.getName() : member_id 가져옴. 예) naver_239283
+			response.sendRedirect(redirectUri.orElseGet(()-> LOCAL_REDIRECT_URL) + "/naverLogin?token="+token+"&member_id="+getPrincipal.getName()+"&naver_id="+m_naver_id+"&result="+result+"&naver_image="+m_image);
 
 			
 		}else {
